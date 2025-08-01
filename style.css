@@ -1,0 +1,188 @@
+/* General Body Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Prevent horizontal scroll due to animations */
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+/* Reset all elements to prevent unwanted spacing */
+* {
+    box-sizing: border-box;
+}
+
+/* App Root Container */
+#app-root {
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    background: #f8fafc; /* Fallback background */
+    /* Removed display: flex since sidebar is now fixed */
+}
+
+/* Sidebar Container */
+#sidebar-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100vh;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    border-right: none; /* Remove any border that might cause white line */
+    position: fixed; /* Make sidebar fixed */
+    top: 0;
+    left: 0;
+    z-index: 30;
+    /* Responsive width classes will be applied via JavaScript */
+}
+
+/* Main Content Wrapper */
+#main-content-wrapper {
+    overflow-x: hidden;
+    min-height: 100vh;
+    flex: 1;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    position: relative;
+    /* Add margin-left to account for fixed sidebar */
+    margin-left: 320px; /* Default for expanded sidebar */
+    transition: margin-left 0.3s ease;
+    /* Margin will be handled by JavaScript for responsive behavior */
+}
+
+/* Enhanced Card Styles */
+.card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Modern Button Styles */
+.btn-modern {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.btn-modern:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+/* Enhanced Navigation Styles */
+.nav-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin: 4px 8px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* Glassmorphism Effect */
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+}
+
+/* Basic Animations */
+@keyframes fade-in-left {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fade-in-right {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.animate-fade-in-left { animation: fade-in-left 0.3s ease-out forwards; }
+.animate-fade-in-right { animation: fade-in-right 0.3s ease-out forwards; }
+.animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; }
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Custom styles for mobile sidebar overlay */
+.mobile-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 40; /* Above main content but below sidebar itself */
+    backdrop-filter: blur(5px);
+}
+
+/* Transitions for sidebar and main content margin */
+/* Applied here for global effect to classes managed by JS */
+#sidebar-container {
+    transition: width 0.3s ease-in-out;
+}
+#main-content-wrapper {
+    transition: margin-left 0.3s ease-in-out;
+}
+
+/* Enhanced Typography */
+.text-gradient {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
+}

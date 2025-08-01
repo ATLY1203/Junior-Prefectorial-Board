@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Junior Prefectorial Board</title>
+    
+    <!-- Favicon - Multiple formats for better compatibility -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" href="favicon.svg">
+    <link rel="shortcut icon" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="icon" sizes="16x16" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" sizes="32x32" type="image/svg+xml" href="favicon.svg">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDKs (Modular versions loaded as regular scripts) -->
+    <!-- These load the global 'firebase' object and its components -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50 font-sans antialiased flex flex-col md:flex-row">
+    <!-- Main App Container -->
+    <div id="app-root" class="flex-grow flex flex-col md:flex-row min-h-screen">
+        <!-- Content will be injected here by JavaScript -->
+    </div>
+
+    <!-- Main JavaScript Logic (loaded as a module) -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
