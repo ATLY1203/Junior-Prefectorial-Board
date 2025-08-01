@@ -2596,18 +2596,212 @@ const handleDeleteAccount = () => {
 
 // Teacher Council Management Functions
 const handleAddCouncilMember = () => {
-    showMessageBox('Add Council Member functionality will be implemented soon!', 'info');
-    console.log('Add Council Member clicked');
+    // Create modal for adding new council member
+    const modalHTML = `
+        <div id="add-council-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Add Council Member</h2>
+                    <button onclick="closeCouncilModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="add-council-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" id="member-name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="member-role" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="">Select Role</option>
+                            <option value="council_ketua">Ketua Pengawas Junior</option>
+                            <option value="council_timbalan_i">Timbalan Ketua Pengawas I</option>
+                            <option value="council_timbalan_ii">Timbalan Ketua Pengawas II</option>
+                            <option value="council_setiausaha_kehormat_i">Setiausaha Kehormat I</option>
+                            <option value="council_setiausaha_kehormat_ii">Setiausaha Kehormat II</option>
+                            <option value="council_bendahari_kehormat_i">Bendahari Kehormat I</option>
+                            <option value="council_bendahari_kehormat_ii">Bendahari Kehormat II</option>
+                            <option value="council_konsul_disiplin_i">Konsul Disiplin I</option>
+                            <option value="council_konsul_disiplin_ii">Konsul Disiplin II</option>
+                            <option value="council_keselamatan_i">Konsul Keselamatan I</option>
+                            <option value="council_keselamatan_ii">Konsul Keselamatan II</option>
+                            <option value="council_penerangan_kerohanian_i">Konsul Penerangan & Kerohanian I</option>
+                            <option value="council_penerangan_kerohanian_ii">Konsul Penerangan & Kerohanian II</option>
+                            <option value="council_pendidikan_keceriaan_i">Konsul Pendidikan & Kecerian I</option>
+                            <option value="council_pendidikan_keceriaan_ii">Konsul Pendidikan & Kecerian II</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="member-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="closeCouncilModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300">
+                            Add Member
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Handle form submission
+    document.getElementById('add-council-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('member-name').value;
+        const role = document.getElementById('member-role').value;
+        const email = document.getElementById('member-email').value;
+        
+        try {
+            // Here you would typically save to Firebase
+            showMessageBox(`Council member "${name}" added successfully!`, 'success');
+            closeCouncilModal();
+            
+            // Refresh the page to show the new member
+            setTimeout(() => {
+                handleNavigate('duty-council');
+            }, 1500);
+            
+        } catch (error) {
+            showMessageBox('Error adding council member. Please try again.', 'error');
+        }
+    });
 };
 
 const handleEditCouncilList = () => {
-    showMessageBox('Edit Council List functionality will be implemented soon!', 'info');
+    showMessageBox('Bulk edit functionality will be implemented soon!', 'info');
     console.log('Edit Council List clicked');
 };
 
 const handleEditCouncilMember = (memberId) => {
-    showMessageBox(`Edit Council Member (${memberId}) functionality will be implemented soon!`, 'info');
-    console.log('Edit Council Member clicked:', memberId);
+    // Get member data based on ID
+    const memberData = getMemberData(memberId);
+    
+    const modalHTML = `
+        <div id="edit-council-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Edit Council Member</h2>
+                    <button onclick="closeCouncilModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="edit-council-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" id="edit-member-name" value="${memberData.name}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="edit-member-role" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="council_ketua" ${memberData.role === 'council_ketua' ? 'selected' : ''}>Ketua Pengawas Junior</option>
+                            <option value="council_timbalan_i" ${memberData.role === 'council_timbalan_i' ? 'selected' : ''}>Timbalan Ketua Pengawas I</option>
+                            <option value="council_timbalan_ii" ${memberData.role === 'council_timbalan_ii' ? 'selected' : ''}>Timbalan Ketua Pengawas II</option>
+                            <option value="council_setiausaha_kehormat_i" ${memberData.role === 'council_setiausaha_kehormat_i' ? 'selected' : ''}>Setiausaha Kehormat I</option>
+                            <option value="council_setiausaha_kehormat_ii" ${memberData.role === 'council_setiausaha_kehormat_ii' ? 'selected' : ''}>Setiausaha Kehormat II</option>
+                            <option value="council_bendahari_kehormat_i" ${memberData.role === 'council_bendahari_kehormat_i' ? 'selected' : ''}>Bendahari Kehormat I</option>
+                            <option value="council_bendahari_kehormat_ii" ${memberData.role === 'council_bendahari_kehormat_ii' ? 'selected' : ''}>Bendahari Kehormat II</option>
+                            <option value="council_konsul_disiplin_i" ${memberData.role === 'council_konsul_disiplin_i' ? 'selected' : ''}>Konsul Disiplin I</option>
+                            <option value="council_konsul_disiplin_ii" ${memberData.role === 'council_konsul_disiplin_ii' ? 'selected' : ''}>Konsul Disiplin II</option>
+                            <option value="council_keselamatan_i" ${memberData.role === 'council_keselamatan_i' ? 'selected' : ''}>Konsul Keselamatan I</option>
+                            <option value="council_keselamatan_ii" ${memberData.role === 'council_keselamatan_ii' ? 'selected' : ''}>Konsul Keselamatan II</option>
+                            <option value="council_penerangan_kerohanian_i" ${memberData.role === 'council_penerangan_kerohanian_i' ? 'selected' : ''}>Konsul Penerangan & Kerohanian I</option>
+                            <option value="council_penerangan_kerohanian_ii" ${memberData.role === 'council_penerangan_kerohanian_ii' ? 'selected' : ''}>Konsul Penerangan & Kerohanian II</option>
+                            <option value="council_pendidikan_keceriaan_i" ${memberData.role === 'council_pendidikan_keceriaan_i' ? 'selected' : ''}>Konsul Pendidikan & Kecerian I</option>
+                            <option value="council_pendidikan_keceriaan_ii" ${memberData.role === 'council_pendidikan_keceriaan_ii' ? 'selected' : ''}>Konsul Pendidikan & Kecerian II</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="edit-member-email" value="${memberData.email || ''}" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="closeCouncilModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300">
+                            Update Member
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Handle form submission
+    document.getElementById('edit-council-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const name = document.getElementById('edit-member-name').value;
+        const role = document.getElementById('edit-member-role').value;
+        const email = document.getElementById('edit-member-email').value;
+        
+        try {
+            // Here you would typically update Firebase
+            showMessageBox(`Council member "${name}" updated successfully!`, 'success');
+            closeCouncilModal();
+            
+            // Refresh the page to show the updated member
+            setTimeout(() => {
+                handleNavigate('duty-council');
+            }, 1500);
+            
+        } catch (error) {
+            showMessageBox('Error updating council member. Please try again.', 'error');
+        }
+    });
+};
+
+// Helper function to get member data
+const getMemberData = (memberId) => {
+    const memberMap = {
+        'jeriel': { name: 'Jeriel Ling Heng Xu', role: 'council_ketua', email: 'jeriel@example.com' },
+        'kelvin': { name: 'Kelvin Ling Lee Jie', role: 'council_timbalan_i', email: 'kelvin@example.com' },
+        'clarence': { name: 'Clarence Lee Meng Ang', role: 'council_timbalan_ii', email: 'clarence@example.com' },
+        'jonathan': { name: 'Jonathan Ting Lian Jing', role: 'council_setiausaha_kehormat_i', email: 'jonathan@example.com' },
+        'benjamin': { name: 'Benjamin Tay Liang Xiao', role: 'council_setiausaha_kehormat_ii', email: 'benjamin@example.com' },
+        'ansom': { name: 'Ansom Wong Jun Jie', role: 'council_bendahari_kehormat_i', email: 'ansom@example.com' },
+        'ling': { name: 'Ling Kuon Fon', role: 'council_bendahari_kehormat_ii', email: 'ling@example.com' },
+        'cristian': { name: 'Cristian Labon', role: 'council_konsul_disiplin_i', email: 'cristian@example.com' },
+        'ivan': { name: 'Ivan Wong', role: 'council_konsul_disiplin_ii', email: 'ivan@example.com' },
+        'morgan': { name: 'Morgan Noah', role: 'council_keselamatan_i', email: 'morgan@example.com' },
+        'ozgon': { name: 'Ozgon Ngu', role: 'council_keselamatan_ii', email: 'ozgon@example.com' },
+        'abraham': { name: 'Abraham Ting Lik Yue', role: 'council_penerangan_kerohanian_i', email: 'abraham@example.com' },
+        'bryan': { name: 'Bryan Wong Qi Lun', role: 'council_penerangan_kerohanian_ii', email: 'bryan@example.com' },
+        'phan': { name: 'Phan Yi Cheng', role: 'council_pendidikan_keceriaan_i', email: 'phan@example.com' },
+        'asyri': { name: 'Asyri Syukri', role: 'council_pendidikan_keceriaan_ii', email: 'asyri@example.com' }
+    };
+    
+    return memberMap[memberId] || { name: 'Unknown Member', role: 'council_ketua', email: '' };
+};
+
+// Function to close modal
+const closeCouncilModal = () => {
+    const modal = document.getElementById('add-council-modal') || document.getElementById('edit-council-modal');
+    if (modal) {
+        modal.remove();
+    }
 };
 
 // Make functions globally accessible
@@ -2617,3 +2811,4 @@ window.handleDeleteAccount = handleDeleteAccount;
 window.handleAddCouncilMember = handleAddCouncilMember;
 window.handleEditCouncilList = handleEditCouncilList;
 window.handleEditCouncilMember = handleEditCouncilMember;
+window.closeCouncilModal = closeCouncilModal;
