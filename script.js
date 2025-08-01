@@ -270,8 +270,8 @@ const renderSidebar = (currentLoggedInUser, onNavigate, onLogout, mobileOpen, si
     ];
 
     const prefectLinks = [];
-    const councilLinks = [{ name: 'Rate Prefects', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`, page: 'rate-prefects' }];
-    const teacherLinks = [{ name: 'Rate Members', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`, page: 'rate-prefects' }];
+    const councilLinks = [{ name: 'Rate Prefects', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12 2"/></svg>`, page: 'rate-prefects' }];
+    const teacherLinks = [{ name: 'Rate Members', icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12 2"/></svg>`, page: 'rate-prefects' }];
 
     let navLinks = [];
     if (currentLoggedInUser) {
@@ -369,7 +369,7 @@ const renderSidebar = (currentLoggedInUser, onNavigate, onLogout, mobileOpen, si
                     <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
                 <h3 class="${userNameSizeClasses} font-semibold text-white mb-1">${currentLoggedInUser.name}</h3>
-                <p class="${userRoleSizeClasses} text-purple-300 capitalize">${currentLoggedInUser.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+                <p class="${userRoleSizeClasses} text-purple-300 capitalize">${currentLoggedInUser.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace('Penerangan Kerohanian', 'Penerangan & Kerohanian')}</p>
             </div>
             ` : ''}
 
@@ -661,237 +661,81 @@ const renderHomePage = async (currentUserProfile) => {
     const isTeacher = currentUserProfile.role === 'teacher';
     const isCouncil = currentUserProfile.role && currentUserProfile.role.startsWith('council');
     const isPrefect = currentUserProfile.role === 'prefect';
-    const showPerformance = isPrefect || isCouncil;
 
     console.log('renderHomePage - User role:', currentUserProfile.role);
     console.log('renderHomePage - isTeacher:', isTeacher, 'isCouncil:', isCouncil, 'isPrefect:', isPrefect);
-    console.log('About to check conditions...');
     
     if (isTeacher) {
         console.log('Rendering teacher dashboard');
-        // Fetch real data for teacher dashboard
-        let totalStudents = 0;
-        let averageRating = 0;
-        let dutiesToday = 0;
-        let recentActivities = [];
-        let upcomingTasks = [];
-
+        // Teacher Dashboard - simplified for now
+        mainContentDiv.innerHTML = `
+            <div class="max-w-7xl mx-auto px-6 py-12">
+                <h1 class="text-4xl font-bold text-purple-700 mb-6">Teacher Dashboard</h1>
+                <p class="text-lg text-gray-600 mb-4">Welcome, ${currentUserProfile.name}!</p>
+                <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
+                    <p>Teacher dashboard content will be implemented here.</p>
+                </div>
+            </div>
+        `;
+    } else if (isCouncil || isPrefect) {
+        console.log('Rendering council/prefect dashboard for:', currentUserProfile.role);
+        
+        // Council and Prefect Dashboard with real data
+        let totalAnnouncements = 0;
+        let recentAnnouncements = [];
+        let myRating = currentUserProfile.averageRating || 0;
+        let totalRatings = currentUserProfile.totalRatings || 0;
+        
         try {
-            // Fetch all user profiles to get student count and average rating
-            const userProfilesRef = collection(db, 'userProfiles');
-            const userQuery = query(userProfilesRef, where('role', 'in', ['prefect', 'council_ketua', 'council_timbalan_i', 'council_timbalan_ii', 'council_setiausaha_kehormat_i', 'council_setiausaha_kehormat_ii', 'council_bendahari_kehormat_i', 'council_bendahari_kehormat_ii', 'council_konsul_disiplin_i', 'council_konsul_disiplin_ii', 'council_keselamatan_i', 'council_keselamatan_ii', 'council_penerangan_kerohanian_i', 'council_penerangan_kerohanian_ii', 'council_pendidikan_keceriaan_i', 'council_pendidikan_keceriaan_ii']));
-            const userSnapshot = await getDocs(userQuery);
-            
-            totalStudents = userSnapshot.size;
-            
-            // Calculate average rating and identify students needing ratings
-            let totalRating = 0;
-            let ratedStudents = 0;
-            let studentsNeedingRating = [];
-            
-            userSnapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.averageRating && data.averageRating > 0) {
-                    totalRating += data.averageRating;
-                    ratedStudents++;
-                } else {
-                    // Students without ratings need to be rated
-                    studentsNeedingRating.push({
-                        id: doc.id,
-                        name: data.name,
-                        role: data.role
-                    });
-                }
-            });
-            averageRating = ratedStudents > 0 ? (totalRating / ratedStudents).toFixed(1) : '0.0';
-
-            // Calculate duties today based on duty schedule
-            const today = new Date();
-            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const currentDay = dayNames[dayOfWeek];
-            
-            // Count duties for today based on the duty schedule
-            // Based on the duty schedule in renderDutyCouncilPage, we have duties every day
-            // Monday: Jeriel Ling Heng Xu, Tuesday: Kelvin Ling Lee Jie, Wednesday: Clarence Lee Meng Ang
-            // Thursday: Jeriel Ling Heng Xu, Friday: Kelvin Ling Lee Jie, Saturday: Clarence Lee Meng Ang
-            // Sunday: No duties (weekend)
-            
-            if (dayOfWeek >= 1 && dayOfWeek <= 6) { // Monday to Saturday
-                dutiesToday = 1; // One duty per day
-            } else {
-                dutiesToday = 0; // No duties on Sunday
-            }
-
-            // Add rating tasks to upcoming tasks
-            if (studentsNeedingRating.length > 0) {
-                upcomingTasks.push({
-                    type: 'rating',
-                    title: `Rate ${studentsNeedingRating.length} student${studentsNeedingRating.length > 1 ? 's' : ''}`,
-                    description: studentsNeedingRating.length > 1 ? 
-                        `Students: ${studentsNeedingRating.slice(0, 2).map(s => s.name).join(', ')}${studentsNeedingRating.length > 2 ? ' and more...' : ''}` :
-                        `Student: ${studentsNeedingRating[0].name}`,
-                    priority: 'high',
-                    due: 'Today'
-                });
-            }
-
-            // Add duty task if there are duties today
-            if (dutiesToday > 0) {
-                upcomingTasks.push({
-                    type: 'duty',
-                    title: `${dutiesToday} duty${dutiesToday > 1 ? 's' : ''} today`,
-                    description: `Check duty schedule for ${currentDay}`,
-                    priority: 'medium',
-                    due: 'Today'
-                });
-            }
-
-            // Get recent announcements (last 5)
+            // Get announcements data
             const announcementsRef = collection(db, 'announcements');
             const announcementQuery = query(announcementsRef, orderBy('createdAt', 'desc'), limit(5));
             const announcementSnapshot = await getDocs(announcementQuery);
             
+            totalAnnouncements = announcementSnapshot.size;
+            
             announcementSnapshot.forEach((doc) => {
                 const data = doc.data();
                 const timeAgo = getTimeAgo(data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt));
-                recentActivities.push({
-                    type: 'announcement',
-                    title: `New announcement: ${data.title}`,
+                recentAnnouncements.push({
+                    title: data.title,
                     time: timeAgo,
                     creator: data.creatorName
                 });
             });
-
-            // Add announcement-related tasks based on current state
-            if (announcementSnapshot.size === 0) {
-                upcomingTasks.push({
-                    type: 'announcement',
-                    title: 'Create first announcement',
-                    description: 'Welcome students to the new semester',
-                    priority: 'medium',
-                    due: 'This week'
-                });
-        } else {
-                // Check for announcements that need attention
-                const today = new Date();
-                const oneDayAgo = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-                
-                let expiringAnnouncements = 0;
-                let oldAnnouncements = 0;
-                
-                announcementSnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const createdAt = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
-                    
-                    // Count announcements that will expire soon (within 6 hours)
-                    const sixHoursAgo = new Date(today.getTime() - 6 * 60 * 60 * 1000);
-                    if (createdAt < sixHoursAgo && createdAt > oneDayAgo) {
-                        expiringAnnouncements++;
-                    }
-                    
-                    // Count announcements that are already old
-                    if (createdAt < oneDayAgo) {
-                        oldAnnouncements++;
-                    }
-                });
-                
-                if (expiringAnnouncements > 0) {
-                    upcomingTasks.push({
-                        type: 'announcement',
-                        title: `${expiringAnnouncements} announcement${expiringAnnouncements > 1 ? 's' : ''} expiring soon`,
-                        description: 'These announcements will be marked as "END" soon',
-                        priority: 'high',
-                        due: 'Today'
-                    });
-                }
-                
-                if (oldAnnouncements > 0) {
-                    upcomingTasks.push({
-                        type: 'announcement',
-                        title: `${oldAnnouncements} announcement${oldAnnouncements > 1 ? 's' : ''} need cleanup`,
-                        description: 'These announcements are over 24 hours old',
-                        priority: 'medium',
-                        due: 'Today'
-                    });
-                }
-                
-                // Add task to create new announcement if none created recently
-                const latestAnnouncement = announcementSnapshot.docs[0];
-                if (latestAnnouncement) {
-                    const latestData = latestAnnouncement.data();
-                    const latestCreatedAt = latestData.createdAt.toDate ? latestData.createdAt.toDate() : new Date(latestData.createdAt);
-                    const hoursSinceLastAnnouncement = (today - latestCreatedAt) / (1000 * 60 * 60);
-                    
-                    if (hoursSinceLastAnnouncement > 24) {
-                        upcomingTasks.push({
-                            type: 'announcement',
-                            title: 'Create new announcement',
-                            description: 'No announcements created in the last 24 hours',
-                            priority: 'medium',
-                            due: 'Today'
-                        });
-                    }
-                }
-            }
-
-            // Add weekly review task
-            upcomingTasks.push({
-                type: 'review',
-                title: 'Weekly student review',
-                description: 'Review all student performances and ratings',
-                priority: 'medium',
-                due: 'This week'
-            });
-
+            
         } catch (error) {
-            console.error('Error fetching teacher dashboard data:', error);
+            console.error('Error fetching council/prefect dashboard data:', error);
         }
-
-        // Check user role to render appropriate dashboard
-        const isTeacher = currentUserProfile.role === 'teacher';
-        const isCouncil = currentUserProfile.role && currentUserProfile.role.startsWith('council_');
-        const isPrefect = currentUserProfile.role === 'prefect';
-
-        if (isTeacher) {
-            // Teacher Dashboard
-            mainContentDiv.innerHTML = `
+        
+        const roleDisplayName = currentUserProfile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace('Penerangan Kerohanian', 'Penerangan & Kerohanian');
+        const showPerformance = isPrefect || isCouncil;
+        
+        mainContentDiv.innerHTML = `
             <div class="max-w-7xl mx-auto px-6 py-12">
                 <!-- Welcome Section -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
-                <div>
+                    <div>
                         <div class="mb-2">
-                            <span class="inline-block bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full">Welcome back, Teacher!</span>
-                </div>
-                        <h1 class="text-5xl font-extrabold text-gray-900 mb-2">Hello, ${currentUserProfile.name}</h1>
-                        <p class="text-lg text-gray-600 mb-4">Ready to manage the Prefectorial Board today?</p>
-            </div>
-                    <div class="mt-8 md:mt-0">
-                        <div class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl shadow-xl p-8 flex flex-col items-center">
-                            <span class="text-white text-2xl font-bold mb-2">Teacher Dashboard</span>
-                            <span class="text-white text-lg font-medium">Supervisor</span>
+                            <span class="inline-block bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full">Welcome back, ${isCouncil ? 'Council Member' : 'Prefect'}!</span>
                         </div>
-                </div>
-            </div>
-
-                <!-- Quick Actions Dashboard -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                    <button onclick="handleNavigate('announcements')" class="click-animate bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-2xl shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
-                        <span class="font-bold text-lg">Create Announcement</span>
-                    </button>
-                    <button onclick="handleNavigate('rate-prefects')" class="click-animate bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-2xl shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-                        <span class="font-bold text-lg">Rate Students</span>
-                    </button>
-                    <button onclick="handleNavigate('students')" class="click-animate bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 rounded-2xl shadow-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-                        <span class="font-bold text-lg">View Students</span>
-                    </button>
-                    <button onclick="handleNavigate('duty-council')" class="click-animate bg-gradient-to-r from-orange-600 to-red-600 text-white p-6 rounded-2xl shadow-lg hover:from-orange-700 hover:to-red-700 transition-all duration-300 flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-                        <span class="font-bold text-lg">Duty Schedule</span>
-                    </button>
+                        <h1 class="text-5xl font-extrabold text-gray-900 mb-2">Hello, ${currentUserProfile.name}</h1>
+                        <p class="text-lg text-gray-600 mb-4">Ready to make today amazing as a <span class="font-bold text-purple-700">${roleDisplayName}</span>?</p>
+                        <div class="flex space-x-4">
+                            <button onclick="handleNavigate('duty-council')" class="click-animate bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300">View Today's Duties</button>
+                            <button onclick="handleNavigate('announcements')" class="click-animate bg-white border border-purple-200 text-purple-700 px-6 py-3 rounded-xl font-semibold shadow hover:bg-purple-50 transition-all duration-300">Check Announcements</button>
+                        </div>
+                    </div>
+                    <div class="mt-8 md:mt-0">
+                        ${showPerformance ? `
+                        <div class="bg-gradient-to-br from-yellow-400 to-orange-400 rounded-3xl shadow-xl p-8 flex flex-col items-center">
+                            <span class="text-white text-2xl font-bold mb-2">Your Performance</span>
+                            <span class="text-6xl font-extrabold text-white mb-2">${myRating.toFixed(1)}</span>
+                            <span class="text-white text-lg font-medium">Outstanding Rating</span>
+                            <span class="text-white text-sm mt-2">${totalRatings} ratings received</span>
+                        </div>
+                        ` : ''}
+                    </div>
                 </div>
 
                 <!-- Quick Stats Cards -->
@@ -899,19 +743,19 @@ const renderHomePage = async (currentUserProfile) => {
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Total Students</p>
-                                <p class="text-3xl font-bold text-gray-900">${totalStudents}</p>
+                                <p class="text-sm font-medium text-gray-600">Check Duties</p>
+                                <p class="text-lg font-bold text-gray-900">View Schedule</p>
                             </div>
                             <div class="bg-purple-100 p-3 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
                             </div>
                         </div>
                     </div>
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Announcements</p>
-                                <p class="text-3xl font-bold text-gray-900">${announcements.length}</p>
+                                <p class="text-sm font-medium text-gray-600">Total Announcements</p>
+                                <p class="text-3xl font-bold text-gray-900">${totalAnnouncements}</p>
                             </div>
                             <div class="bg-green-100 p-3 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
@@ -921,8 +765,8 @@ const renderHomePage = async (currentUserProfile) => {
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Avg Rating</p>
-                                <p class="text-3xl font-bold text-gray-900">${averageRating}</p>
+                                <p class="text-sm font-medium text-gray-600">My Rating</p>
+                                <p class="text-3xl font-bold text-gray-900">${myRating.toFixed(1)}</p>
                             </div>
                             <div class="bg-yellow-100 p-3 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
@@ -932,327 +776,111 @@ const renderHomePage = async (currentUserProfile) => {
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Duties Today</p>
-                                <p class="text-3xl font-bold text-gray-900">${dutiesToday}</p>
+                                <p class="text-sm font-medium text-gray-600">My Role</p>
+                                <p class="text-lg font-bold text-gray-900">${roleDisplayName}</p>
                             </div>
                             <div class="bg-blue-100 p-3 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                             </div>
                         </div>
+                    </div>
                 </div>
-            </div>
 
                 <!-- Main Content Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Recent Activity Feed -->
+                    <!-- Recent Announcements -->
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                            <span>Recent Activity</span>
-                </h2>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
+                            <span>Recent Announcements</span>
+                        </h2>
                         <div class="space-y-4">
-                            ${recentActivities.length > 0 ? recentActivities.map(activity => `
+                            ${recentAnnouncements.length > 0 ? recentAnnouncements.map(announcement => `
                                 <div class="flex items-center space-x-3 p-3 bg-purple-50 rounded-xl">
                                     <div class="bg-purple-500 p-2 rounded-full">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
-            </div>
+                                    </div>
                                     <div>
-                                        <p class="font-semibold text-gray-900">${activity.title}</p>
-                                        <p class="text-sm text-gray-600">${activity.time}</p>
-        </div>
-        </div>
+                                        <p class="font-semibold text-gray-900">${announcement.title}</p>
+                                        <p class="text-sm text-gray-600">${announcement.time} • By ${announcement.creator}</p>
+                                    </div>
+                                </div>
                             `).join('') : `
                                 <div class="text-center py-8 text-gray-500">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-gray-300"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                                    <p>No recent activity</p>
+                                    <p>No recent announcements</p>
                                 </div>
                             `}
                         </div>
                     </div>
 
-                    <!-- Upcoming Tasks -->
+                    <!-- My Duties & Tasks -->
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-600"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
-                            <span>Upcoming Tasks</span>
+                            <span>My Duties & Tasks</span>
                         </h2>
                         <div class="space-y-4">
-                            ${upcomingTasks.length > 0 ? upcomingTasks.map(task => {
-                                const getTaskIcon = (type) => {
-                                    switch(type) {
-                                        case 'rating':
-                                            return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`;
-                                        case 'announcement':
-                                            return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>`;
-                                        case 'review':
-                                            return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`;
-                                        case 'duty':
-                                            return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r="1"/></svg>`;
-                                        default:
-                                            return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>`;
-                                    }
-                                };
-                                
-                                const getTaskColor = (priority) => {
-                                    switch(priority) {
-                                        case 'high':
-                                            return 'orange';
-                                        case 'medium':
-                                            return 'blue';
-                                        case 'low':
-                                            return 'green';
-                                        default:
-                                            return 'blue';
-                                    }
-                                };
-                                
-                                const color = getTaskColor(task.priority);
-                                const bgColor = `${color}-50`;
-                                const iconBgColor = `${color}-500`;
-                                const buttonBgColor = `${color}-500`;
-                                const buttonHoverColor = `${color}-600`;
-
-        return `
-                                    <div class="flex items-center justify-between p-3 bg-${bgColor} rounded-xl">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="bg-${iconBgColor} p-2 rounded-full">
-                                                ${getTaskIcon(task.type)}
-                                            </div>
-                                            <div>
-                                                <p class="font-semibold text-gray-900">${task.title}</p>
-                                                <p class="text-sm text-gray-600">${task.description}</p>
-                                                <p class="text-xs text-${color}-600 font-medium">Due: ${task.due}</p>
-                                            </div>
-                                        </div>
-                                        <button onclick="handleNavigate('${task.type === 'rating' ? 'rate-prefects' : task.type === 'announcement' ? 'announcements' : task.type === 'duty' ? 'duty-council' : 'duty-council'}')" class="bg-${buttonBgColor} text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-${buttonHoverColor} transition-colors">
-                                            ${task.type === 'rating' ? 'Rate' : task.type === 'announcement' ? 'Create' : task.type === 'duty' ? 'Check' : 'Review'}
-                                        </button>
+                            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-blue-500 p-2 rounded-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
                                     </div>
-                                `;
-                            }).join('') : `
-                                <div class="text-center py-8 text-gray-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-gray-300"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
-                                    <p>No upcoming tasks</p>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Check duty schedule</p>
+                                        <p class="text-sm text-gray-600">View today's duties and assignments</p>
+                                    </div>
                                 </div>
-                            `}
+                                <button onclick="handleNavigate('duty-council')" class="click-animate bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">View</button>
+                            </div>
+                            
+                            ${isCouncil ? `
+                                <div class="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="bg-blue-500 p-2 rounded-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">Rate prefects</p>
+                                            <p class="text-sm text-gray-600">Provide feedback to prefects</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="handleNavigate('rate-prefects')" class="click-animate bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">Rate</button>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-purple-500 p-2 rounded-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">View my profile</p>
+                                        <p class="text-sm text-gray-600">Check my information and ratings</p>
+                                    </div>
+                                </div>
+                                <button onclick="handleNavigate('profile')" class="click-animate bg-purple-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-purple-600 transition-colors">View</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        } else if (isCouncil || isPrefect) {
-            console.log('Teacher condition not met, checking council/prefect...');
-            console.log('Rendering council/prefect dashboard for:', currentUserProfile.role);
-            console.log('Condition check: isCouncil =', isCouncil, 'isPrefect =', isPrefect);
-            console.log('Condition evaluation: (isCouncil || isPrefect) =', (isCouncil || isPrefect));
-            console.log('Setting council/prefect HTML content');
-            // Council and Prefect Dashboard with real data
-            let myDutiesToday = 0;
-            let myDutyDay = '';
-            let totalAnnouncements = 0;
-            let recentAnnouncements = [];
-            let myRating = currentUserProfile.averageRating || 0;
-            let totalRatings = currentUserProfile.totalRatings || 0;
-            
-            try {
-                // Get announcements data
-                const announcementsRef = collection(db, 'announcements');
-                const announcementQuery = query(announcementsRef, orderBy('createdAt', 'desc'), limit(5));
-                const announcementSnapshot = await getDocs(announcementQuery);
-                
-                totalAnnouncements = announcementSnapshot.size;
-                
-                announcementSnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const timeAgo = getTimeAgo(data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt));
-                    recentAnnouncements.push({
-                        title: data.title,
-                        time: timeAgo,
-                        creator: data.creatorName
-                    });
-                });
-                
-            } catch (error) {
-                console.error('Error fetching council/prefect dashboard data:', error);
-            }
-            
-            const roleDisplayName = currentUserProfile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-            const showPerformance = isPrefect || isCouncil;
-            
-                        console.log('Setting council/prefect HTML content');
-            console.log('mainContentDiv exists:', !!mainContentDiv);
-            mainContentDiv.innerHTML = `
-                <div class="max-w-7xl mx-auto px-6 py-12">
-                    <!-- Welcome Section -->
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
-                        <div>
-                            <div class="mb-2">
-                                <span class="inline-block bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full">Welcome back, ${isCouncil ? 'Council Member' : 'Prefect'}!</span>
-                            </div>
-                            <h1 class="text-5xl font-extrabold text-gray-900 mb-2">Hello, ${currentUserProfile.name}</h1>
-                            <p class="text-lg text-gray-600 mb-4">Ready to make today amazing as a <span class="font-bold text-purple-700">${roleDisplayName}</span>?</p>
-                            <div class="flex space-x-4">
-                                <button onclick="handleNavigate('duty-council')" class="click-animate bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300">View Today's Duties</button>
-                                <button onclick="handleNavigate('announcements')" class="click-animate bg-white border border-purple-200 text-purple-700 px-6 py-3 rounded-xl font-semibold shadow hover:bg-purple-50 transition-all duration-300">Check Announcements</button>
-                            </div>
-                        </div>
-                        <div class="mt-8 md:mt-0">
-                            ${showPerformance ? `
-                            <div class="bg-gradient-to-br from-yellow-400 to-orange-400 rounded-3xl shadow-xl p-8 flex flex-col items-center">
-                                <span class="text-white text-2xl font-bold mb-2">Your Performance</span>
-                                <span class="text-6xl font-extrabold text-white mb-2">${myRating.toFixed(1)}</span>
-                                <span class="text-white text-lg font-medium">Outstanding Rating</span>
-                                <span class="text-white text-sm mt-2">${totalRatings} ratings received</span>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <!-- Quick Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Check Duties</p>
-                                    <p class="text-lg font-bold text-gray-900">View Schedule</p>
-                                </div>
-                                <div class="bg-purple-100 p-3 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Total Announcements</p>
-                                    <p class="text-3xl font-bold text-gray-900">${totalAnnouncements}</p>
-                                </div>
-                                <div class="bg-green-100 p-3 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">My Rating</p>
-                                    <p class="text-3xl font-bold text-gray-900">${myRating.toFixed(1)}</p>
-                                </div>
-                                <div class="bg-yellow-100 p-3 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">My Role</p>
-                                    <p class="text-lg font-bold text-gray-900">${roleDisplayName}</p>
-                                </div>
-                                <div class="bg-blue-100 p-3 rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                                </div>
-                            </div>
+    } else {
+        console.log('No condition matched! Rendering fallback content');
+        mainContentDiv.innerHTML = `
+            <div class="max-w-4xl mx-auto px-6 py-12">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    <h2 class="text-2xl font-bold text-red-700 mb-2">Error</h2>
+                    <p class="text-red-600">Unable to determine user role for home page rendering.</p>
+                    <p class="text-red-500 text-sm mt-2">Role: ${currentUserProfile?.role || 'undefined'}</p>
                 </div>
             </div>
-
-                    <!-- Main Content Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Recent Announcements -->
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
-                                <span>Recent Announcements</span>
-                </h2>
-                            <div class="space-y-4">
-                                ${recentAnnouncements.length > 0 ? recentAnnouncements.map(announcement => `
-                                    <div class="flex items-center space-x-3 p-3 bg-purple-50 rounded-xl">
-                                        <div class="bg-purple-500 p-2 rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="m3 11 18-2L13 22 3 11Z"/><path d="M7 7v7"/><path d="M21 9v.5c0 .8-.5 1.5-1.3 1.8l-4 1.2c-.7.2-1.5.1-2.1-.3l-.7-.9c-.5-.6-1.3-1-2.2-1H3"/></svg>
-                                        </div>
-                                        <div>
-                                            <p class="font-semibold text-gray-900">${announcement.title}</p>
-                                            <p class="text-sm text-gray-600">${announcement.time} • By ${announcement.creator}</p>
-                                        </div>
-                                    </div>
-                                `).join('') : `
-                                    <div class="text-center py-8 text-gray-500">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-gray-300"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                                        <p>No recent announcements</p>
-                                    </div>
-                                `}
-                </div>
-            </div>
-
-                        <!-- My Duties & Tasks -->
-                        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-600"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/></svg>
-                                <span>My Duties & Tasks</span>
-                </h2>
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="bg-blue-500 p-2 rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-                </div>
-                                        <div>
-                                            <p class="font-semibold text-gray-900">Check duty schedule</p>
-                                            <p class="text-sm text-gray-600">View today's duties and assignments</p>
-            </div>
-        </div>
-                                    <button onclick="handleNavigate('duty-council')" class="click-animate bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">View</button>
-                                </div>
-                                
-                                ${isCouncil ? `
-                                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-                                        <div class="flex items-center space-x-3">
-                                            <div class="bg-blue-500 p-2 rounded-full">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-                                            </div>
-                                            <div>
-                                                <p class="font-semibold text-gray-900">Rate prefects</p>
-                                                <p class="text-sm text-gray-600">Provide feedback to prefects</p>
-                                            </div>
-                                        </div>
-                                        <button onclick="handleNavigate('rate-prefects')" class="click-animate bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">Rate</button>
-                                    </div>
-                                ` : ''}
-                                
-                                <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="bg-purple-500 p-2 rounded-full">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                                        </div>
-                                        <div>
-                                            <p class="font-semibold text-gray-900">View my profile</p>
-                                            <p class="text-sm text-gray-600">Check my information and ratings</p>
-                                        </div>
-                                    </div>
-                                    <button onclick="handleNavigate('profile')" class="click-animate bg-purple-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-purple-600 transition-colors">View</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-            </div>
-                    `;
-        } else {
-            console.log('No condition matched! Rendering fallback content');
-            mainContentDiv.innerHTML = `
-                <div class="max-w-4xl mx-auto px-6 py-12">
-                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-red-500"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                        <h2 class="text-2xl font-bold text-red-700 mb-2">Error</h2>
-                        <p class="text-red-600">Unable to determine user role for home page rendering.</p>
-                        <p class="text-red-500 text-sm mt-2">Role: ${currentUserProfile?.role || 'undefined'}</p>
-                    </div>
-                </div>
-            `;
-        }
+        `;
     }
     
     console.log('Home page rendering complete');
-    // Setup animations for buttons in this page
     setupButtonAnimations();
 };
 
@@ -1261,130 +889,231 @@ const renderDutyCouncilPage = (currentUserProfile) => {
     const mainContentDiv = document.getElementById('main-content');
     if (!mainContentDiv) return;
 
-        mainContentDiv.innerHTML = `
+    const isTeacher = currentUserProfile.role === 'teacher';
+
+    mainContentDiv.innerHTML = `
         <div class="max-w-7xl mx-auto px-6 py-12">
-            <h1 class="text-4xl font-bold text-purple-700 mb-8 flex items-center space-x-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list text-purple-600"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-                <span>Duty & Council Information</span>
-            </h1>
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-4xl font-bold text-purple-700 flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-list text-purple-600"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                    <span>Duty & Council Information</span>
+                </h1>
+                ${isTeacher ? `
+                    <div class="flex space-x-3">
+                        <button onclick="handleAddCouncilMember()" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            <span>Add Member</span>
+                        </button>
+                        <button onclick="handleEditCouncilList()" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            <span>Edit List</span>
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+            
             <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
                 <!-- Council Members -->
                 <div class="w-9/10 mx-auto">
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Council Members</h2>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-900">Council Members</h2>
+                            ${isTeacher ? `
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm text-gray-600">Teacher Access:</span>
+                                    <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">Full Control</span>
+                                </div>
+                            ` : ''}
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'jeriel\')"' : ''}>
                                 <img src="https://placehold.co/48x48/A78BFA/fff?text=JL" class="w-12 h-12 rounded-full border-2 border-purple-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Jeriel Ling Heng Xu</p>
                                     <p class="text-sm text-purple-600">Ketua Pengawas Junior</p>
-            </div>
-        </div>
-                            <div class="flex items-center space-x-4">
+                                </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'kelvin\')"' : ''}>
                                 <img src="https://placehold.co/48x48/60A5FA/fff?text=KL" class="w-12 h-12 rounded-full border-2 border-blue-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Kelvin Ling Lee Jie</p>
                                     <p class="text-sm text-blue-600">Timbalan Ketua Pengawas I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'clarence\')"' : ''}>
                                 <img src="https://placehold.co/48x48/34D399/fff?text=CL" class="w-12 h-12 rounded-full border-2 border-green-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Clarence Lee Meng Ang</p>
                                     <p class="text-sm text-green-600">Timbalan Ketua Pengawas II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'jonathan\')"' : ''}>
                                 <img src="https://placehold.co/48x48/3B82F6/fff?text=JT" class="w-12 h-12 rounded-full border-2 border-blue-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Jonathan Ting Lian Jing</p>
                                     <p class="text-sm text-blue-600">Setiausaha Kehormat I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'benjamin\')"' : ''}>
                                 <img src="https://placehold.co/48x48/06B6D4/fff?text=BT" class="w-12 h-12 rounded-full border-2 border-cyan-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Benjamin Tay Liang Xiao</p>
                                     <p class="text-sm text-cyan-600">Setiausaha Kehormat II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'ansom\')"' : ''}>
                                 <img src="https://placehold.co/48x48/14B8A6/fff?text=AW" class="w-12 h-12 rounded-full border-2 border-teal-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Ansom Wong Jun Jie</p>
                                     <p class="text-sm text-teal-600">Bendahari Kehormat I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'ling\')"' : ''}>
                                 <img src="https://placehold.co/48x48/10B981/fff?text=LK" class="w-12 h-12 rounded-full border-2 border-emerald-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Ling Kuon Fon</p>
                                     <p class="text-sm text-emerald-600">Bendahari Kehormat II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'cristian\')"' : ''}>
                                 <img src="https://placehold.co/48x48/F97316/fff?text=CL" class="w-12 h-12 rounded-full border-2 border-orange-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Cristian Labon</p>
                                     <p class="text-sm text-orange-600">Konsul Disiplin I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'ivan\')"' : ''}>
                                 <img src="https://placehold.co/48x48/EF4444/fff?text=IW" class="w-12 h-12 rounded-full border-2 border-red-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Ivan Wong</p>
                                     <p class="text-sm text-red-600">Konsul Disiplin II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'morgan\')"' : ''}>
                                 <img src="https://placehold.co/48x48/EC4899/fff?text=MN" class="w-12 h-12 rounded-full border-2 border-pink-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Morgan Noah</p>
                                     <p class="text-sm text-pink-600">Konsul Keselamatan I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'ozgon\')"' : ''}>
                                 <img src="https://placehold.co/48x48/F43F5E/fff?text=ON" class="w-12 h-12 rounded-full border-2 border-rose-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Ozgon Ngu</p>
                                     <p class="text-sm text-rose-600">Konsul Keselamatan II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'abraham\')"' : ''}>
                                 <img src="https://placehold.co/48x48/EAB308/fff?text=AT" class="w-12 h-12 rounded-full border-2 border-yellow-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Abraham Ting Lik Yue</p>
                                     <p class="text-sm text-yellow-600">Konsul Penerangan & Kerohanian I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'bryan\')"' : ''}>
                                 <img src="https://placehold.co/48x48/D97706/fff?text=BW" class="w-12 h-12 rounded-full border-2 border-amber-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Bryan Wong Qi Lun</p>
                                     <p class="text-sm text-amber-600">Konsul Penerangan & Kerohanian II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'phan\')"' : ''}>
                                 <img src="https://placehold.co/48x48/84CC16/fff?text=PY" class="w-12 h-12 rounded-full border-2 border-lime-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Phan Yi Cheng</p>
                                     <p class="text-sm text-lime-600">Konsul Pendidikan & Kecerian I</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors ${isTeacher ? 'cursor-pointer' : ''}" ${isTeacher ? 'onclick="handleEditCouncilMember(\'asyri\')"' : ''}>
                                 <img src="https://placehold.co/48x48/64748B/fff?text=AS" class="w-12 h-12 rounded-full border-2 border-slate-400" />
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-gray-900">Asyri Syukri</p>
                                     <p class="text-sm text-slate-600">Konsul Pendidikan & Kecerian II</p>
                                 </div>
+                                ${isTeacher ? `
+                                    <button class="text-gray-400 hover:text-blue-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    </button>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            </div>
-        `;
-    };
+        </div>
+    `;
+    setupButtonAnimations();
+};
 
 // Announcement Board Page
 const renderAnnouncementBoard = async (currentUserProfile) => {
@@ -1885,7 +1614,7 @@ const renderAnnouncementBoard = async (currentUserProfile) => {
                     <p class="text-xl font-semibold text-gray-800">${target.name}</p>
                     <p class="text-gray-600 text-sm font-medium">Role: ${target.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
                                 <div class="flex items-center space-x-2 mt-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12 2"/></svg>
                         <span class="text-2xl font-bold text-gray-800">${(target.averageRating || 0).toFixed(1)}</span>
                                     <span class="text-lg text-gray-600">/ 5</span>
                                 </div>
@@ -2037,9 +1766,11 @@ onAuthStateChanged(auth, async (user) => {
 
         // Toggle sidebar visibility (for desktop)
         const toggleSidebarVisibility = () => {
+            console.log('Sidebar toggle clicked. Current state:', isSidebarVisible);
             isSidebarVisible = !isSidebarVisible;
-    renderAppShellAndContent(); // Re-render to update classes based on new state
-};
+            console.log('Sidebar state changed to:', isSidebarVisible);
+            renderAppShellAndContent(); // Re-render to update classes based on new state
+        };
 
 const handleLogout = async () => {
     loadingAuth = true;
@@ -2130,6 +1861,7 @@ const handleLogout = async () => {
             }
 
             // --- Update Sidebar Content and Classes ---
+            console.log('Rendering sidebar with state - isSidebarVisible:', isSidebarVisible, 'isMobileMenuOpen:', isMobileMenuOpen);
             const sidebarHtml = renderSidebar(userProfile, handleNavigate, handleLogout, isMobileMenuOpen, isSidebarVisible);
             sidebarContainer.innerHTML = sidebarHtml; // Update innerHTML of existing sidebar
             // Update sidebar container classes
@@ -2309,7 +2041,7 @@ const renderProfilePage = (currentUserProfile) => {
                             <img src="${currentUserProfile.photoUrl}" alt="${currentUserProfile.name}" class="w-24 h-24 rounded-full border-4 border-purple-200">
                             <div>
                                 <h2 class="text-3xl font-bold text-gray-900">${currentUserProfile.name}</h2>
-                                <p class="text-lg text-purple-600 font-semibold">${currentUserProfile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+                                <p class="text-lg text-purple-600 font-semibold">${currentUserProfile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace('Penerangan Kerohanian', 'Penerangan & Kerohanian')}</p>
                                 <p class="text-gray-600">Member since ${new Date(currentUserProfile.createdAt.toDate()).toLocaleDateString()}</p>
                             </div>
                         </div>
@@ -2319,7 +2051,7 @@ const renderProfilePage = (currentUserProfile) => {
                                 <h3 class="text-lg font-bold mb-2">Personal Info</h3>
                                 <div class="space-y-2 text-sm">
                                     <p><span class="font-semibold">Name:</span> ${currentUserProfile.name}</p>
-                                    <p><span class="font-semibold">Role:</span> ${currentUserProfile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+                                    <p><span class="font-semibold">Role:</span> ${currentUserProfile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace('Penerangan Kerohanian', 'Penerangan & Kerohanian')}</p>
                                     <p><span class="font-semibold">Joined:</span> ${new Date(currentUserProfile.createdAt.toDate()).toLocaleDateString()}</p>
                                 </div>
                             </div>
@@ -2346,9 +2078,9 @@ const renderProfilePage = (currentUserProfile) => {
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                         <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
                         <div class="space-y-3">
-                            <button class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300">Edit Profile</button>
-                            <button class="w-full bg-white border border-purple-200 text-purple-700 px-4 py-3 rounded-xl font-semibold shadow hover:bg-purple-50 transition-all duration-300">Change Photo</button>
-                            <button class="w-full bg-white border border-red-200 text-red-700 px-4 py-3 rounded-xl font-semibold shadow hover:bg-red-50 transition-all duration-300">Delete Account</button>
+                            <button onclick="handleEditProfile()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300">Edit Profile</button>
+                            <button onclick="handleChangePhoto()" class="w-full bg-white border border-purple-200 text-purple-700 px-4 py-3 rounded-xl font-semibold shadow hover:bg-purple-50 transition-all duration-300">Change Photo</button>
+                            <button onclick="handleDeleteAccount()" class="w-full bg-white border border-red-200 text-red-700 px-4 py-3 rounded-xl font-semibold shadow hover:bg-red-50 transition-all duration-300">Delete Account</button>
                         </div>
                     </div>
                     
@@ -2841,5 +2573,47 @@ const renderStudentsPage = async (currentUserProfile) => {
             `}
         </div>
     `;
+    setupButtonAnimations();
 };
 
+// Quick Actions Handler Functions
+const handleEditProfile = () => {
+    showMessageBox('Edit Profile functionality will be implemented soon!', 'info');
+    console.log('Edit Profile clicked');
+};
+
+const handleChangePhoto = () => {
+    showMessageBox('Change Photo functionality will be implemented soon!', 'info');
+    console.log('Change Photo clicked');
+};
+
+const handleDeleteAccount = () => {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        showMessageBox('Delete Account functionality will be implemented soon!', 'warning');
+        console.log('Delete Account confirmed');
+    }
+};
+
+// Teacher Council Management Functions
+const handleAddCouncilMember = () => {
+    showMessageBox('Add Council Member functionality will be implemented soon!', 'info');
+    console.log('Add Council Member clicked');
+};
+
+const handleEditCouncilList = () => {
+    showMessageBox('Edit Council List functionality will be implemented soon!', 'info');
+    console.log('Edit Council List clicked');
+};
+
+const handleEditCouncilMember = (memberId) => {
+    showMessageBox(`Edit Council Member (${memberId}) functionality will be implemented soon!`, 'info');
+    console.log('Edit Council Member clicked:', memberId);
+};
+
+// Make functions globally accessible
+window.handleEditProfile = handleEditProfile;
+window.handleChangePhoto = handleChangePhoto;
+window.handleDeleteAccount = handleDeleteAccount;
+window.handleAddCouncilMember = handleAddCouncilMember;
+window.handleEditCouncilList = handleEditCouncilList;
+window.handleEditCouncilMember = handleEditCouncilMember;
