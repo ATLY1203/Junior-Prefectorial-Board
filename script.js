@@ -1,24 +1,9 @@
-// Import Firebase functions directly from their modules
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// Use centralized Firebase config (modular) exported from js/firebase-config.js
+import { auth, db } from './js/firebase-config.js';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyA51FUrXWFy9YcwLCpRvnJrbA-M4NO4Nhk",
-    authDomain: "junior-prefectorial-board-shs.firebaseapp.com",
-    projectId: "junior-prefectorial-board-shs",
-    storageBucket: "junior-prefectorial-board-shs.firebasestorage.app",
-    messagingSenderId: "739590294045",
-    appId: "1:739590294045:web:cae43d90faf0dd72dc14f4",
-    measurementId: "G-VTZRBC1Q6N"
-};
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-// Initialize Firebase App and get service instances ONCE at the top level
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app); // Correctly getAuth from the initialized app
-const db = getFirestore(app); // Correctly getFirestore from the initialized app
 
 
 // --- Global State Variables ---
@@ -71,8 +56,19 @@ const setupButtonAnimations = () => {
 
 // --- Utility Functions ---
 
-// MessageBox
+// MessageBox - defensive message normalization to avoid displaying null/objects
 const showMessageBox = (message, type = 'info') => {
+    // Normalize message into a safe string
+    let text;
+    if (message === null || typeof message === 'undefined') {
+        text = 'An unknown error occurred.';
+    } else if (typeof message === 'object') {
+        // Prefer .message if available, otherwise stringify safely
+        text = message.message || JSON.stringify(message);
+    } else {
+        text = String(message);
+    }
+
     let msgBox = document.getElementById('message-box');
     if (!msgBox) {
         msgBox = document.createElement('div');
@@ -83,12 +79,14 @@ const showMessageBox = (message, type = 'info') => {
 
     const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
     const textColor = 'text-white';
-    const iconSvg = type === 'error' ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`;
+    const iconSvg = type === 'error'
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>`;
 
     msgBox.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center space-x-2 ${bgColor} ${textColor} z-50 transition-transform duration-300 transform translate-x-0`;
     msgBox.innerHTML = `
         ${iconSvg}
-        <span>${message}</span>
+        <span>${text}</span>
         <button id="close-message-box" class="ml-2 font-bold">&times;</button>
     `;
 
@@ -597,7 +595,7 @@ const renderLoginPage = () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         let success = false;
-        let error = null;
+        let error = 'An unknown error occurred.';
 
         if (isLoginMode) {
             if (!email || !password) {
@@ -607,9 +605,9 @@ const renderLoginPage = () => {
             try {
                 await attemptLogin(e);
                 success = true;
-            } catch (error) {
+            } catch (errObj) {
                 success = false;
-                error = error.message;
+                error = (errObj && (errObj.message || String(errObj))) || 'Failed to login.';
             }
         } else {
             const userName = document.getElementById('userName').value;
@@ -635,9 +633,9 @@ const renderLoginPage = () => {
             try {
                 await attemptSignup(e);
                 success = true;
-            } catch (error) {
+            } catch (errObj) {
                 success = false;
-                error = error.message;
+                error = (errObj && (errObj.message || String(errObj))) || 'Failed to create account.';
             }
         }
 
@@ -645,7 +643,7 @@ const renderLoginPage = () => {
             showMessageBox(isLoginMode ? 'Login successful!' : 'Account created successfully! You are now logged in.', 'info');
             // Auth state change listener will handle page redirection
         } else {
-            showMessageBox(error, 'error');
+            showMessageBox(error || 'An unknown error occurred.', 'error');
         }
     };
 
@@ -882,6 +880,92 @@ const renderHomePage = async (currentUserProfile) => {
     
     console.log('Home page rendering complete');
     setupButtonAnimations();
+};
+
+// Profile setup page (for completing minimal auto-created profiles)
+const renderProfileSetupPage = () => {
+    const appRoot = document.getElementById('app-root');
+    if (!appRoot) return;
+
+    appRoot.innerHTML = `
+        <div class="max-w-3xl mx-auto p-8">
+            <h1 class="text-3xl font-bold mb-4">Complete your profile</h1>
+            <p class="mb-6 text-gray-600">A few more details to finish setting up your account.</p>
+            <form id="profile-setup-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Full name</label>
+                    <input id="profile-name" name="name" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${userProfile.name || ''}" required />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Role</label>
+                    <select id="profile-role" name="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="prefect" ${userProfile.role === 'prefect' ? 'selected' : ''}>Prefect</option>
+                        <option value="council_ketua" ${userProfile.role === 'council_ketua' ? 'selected' : ''}>Council - Ketua</option>
+                        <option value="teacher" ${userProfile.role === 'teacher' ? 'selected' : ''}>Teacher</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Photo URL (optional)</label>
+                    <input id="profile-photo" name="photoUrl" type="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${userProfile.photoUrl || ''}" />
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="save-profile-btn" class="px-4 py-2 bg-purple-600 text-white rounded">Save and Continue</button>
+                    <button id="skip-profile-btn" class="px-4 py-2 bg-gray-200 rounded">Skip for now</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    // Form handlers
+    const form = document.getElementById('profile-setup-form');
+    form.onsubmit = handleProfileSave;
+    document.getElementById('skip-profile-btn').onclick = (e) => {
+        e.preventDefault();
+        // Mark profile as complete but leave defaults
+        (async () => {
+            try {
+                const updated = { ...userProfile, isProfileComplete: true };
+                await setDoc(doc(db, 'userProfiles', userProfile.uid), updated, { merge: true });
+                userProfile = updated;
+                renderApp();
+            } catch (err) {
+                console.error('Error skipping profile setup:', err);
+                showMessageBox('Failed to skip profile setup. Please try again.', 'error');
+            }
+        })();
+    };
+};
+
+// Handle saving the profile setup form
+const handleProfileSave = async (event) => {
+    event.preventDefault();
+    const name = document.getElementById('profile-name').value.trim();
+    const role = document.getElementById('profile-role').value;
+    const photoUrl = document.getElementById('profile-photo').value.trim() || userProfile.photoUrl || null;
+
+    if (!name) {
+        showMessageBox('Please enter your full name.', 'error');
+        return;
+    }
+
+    try {
+        showMessageBox('Saving profile...', 'info');
+        const updated = {
+            ...userProfile,
+            name,
+            role,
+            photoUrl,
+            isProfileComplete: true
+        };
+        await setDoc(doc(db, 'userProfiles', userProfile.uid), updated, { merge: true });
+        userProfile = updated;
+        showMessageBox('Profile updated successfully!', 'success');
+        // Continue to main app
+        renderApp();
+    } catch (err) {
+        console.error('handleProfileSave: Error updating profile', err);
+        showMessageBox('Failed to save profile. Please try again.', 'error');
+    }
 };
 
 // Duty & Council Info Page
@@ -1541,7 +1625,7 @@ const renderAnnouncementBoard = async (currentUserProfile) => {
 
     const updatePrefectAverageRating = async (targetId) => {
                 try {
-            const ratingsQuery = query(collection(db, `artifacts/${appId}/public/data/ratings`), where('ratedPrefectId', '==', targetId));
+            const ratingsQuery = query(collection(db, 'ratings'), where('ratedPrefectId', '==', targetId));
                     const ratingsSnapshot = await getDocs(ratingsQuery);
                     let totalStars = 0;
                     let numRatings = 0;
@@ -1552,7 +1636,7 @@ const renderAnnouncementBoard = async (currentUserProfile) => {
 
                     const averageRating = numRatings > 0 ? (totalStars / numRatings) : 0;
 
-            const targetProfileRef = doc(db, `artifacts/${appId}/public/data/userProfiles`, targetId);
+            const targetProfileRef = doc(db, 'userProfiles', targetId);
             await updateDoc(targetProfileRef, { averageRating: averageRating });
                 } catch (error) {
             console.error("Error updating average rating:", error);
@@ -1568,7 +1652,7 @@ const renderAnnouncementBoard = async (currentUserProfile) => {
                     return;
                 }
                 try {
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/ratings`), {
+                    await addDoc(collection(db, 'ratings'), {
                         raterId: userId,
                         ratedPrefectId: prefectSelect.value,
                         stars: currentStars,
@@ -1590,7 +1674,7 @@ const renderAnnouncementBoard = async (currentUserProfile) => {
     };
 
     // Fetch and display targets for selection and list
-    const profilesRef = collection(db, `artifacts/${appId}/public/data/userProfiles`);
+    const profilesRef = collection(db, 'userProfiles');
     let q;
     if (isTeacher) {
         // Teachers: can rate both council and prefects
@@ -1668,6 +1752,14 @@ const renderApp = async () => {
         return;
     }
 
+    // If profile exists but is incomplete, show profile setup
+    if (currentUser && userProfile && userProfile.isProfileComplete === false) {
+        console.log('User profile incomplete — showing profile setup page');
+        appRoot.className = "flex-grow flex flex-col md:flex-row min-h-screen";
+        renderProfileSetupPage();
+        return;
+    }
+
     // If loading is false AND user/userProfile exist, render main app layout
     console.log("Rendering main app layout.");
     // Fixed: Completely reset the app root to ensure no loading text remains
@@ -1699,22 +1791,22 @@ window.addEventListener('load', () => {
                 userProfile = null;
                 return null;
             }
-            const userProfileDocRef = doc(db, `artifacts/${appId}/public/data/userProfiles`, uid);
             try {
-                console.log(`fetchUserProfile: Attempting to fetch profile for UID: ${uid} from path: artifacts/${appId}/public/data/userProfiles/${uid}`);
-                const docSnap = await getDoc(userProfileDocRef);
-                if (docSnap.exists()) {
-                    const profileData = docSnap.data();
-                    console.log("fetchUserProfile: Profile found!", profileData);
+                const ref = doc(db, 'userProfiles', uid);
+                console.log(`fetchUserProfile: Fetching userProfiles/${uid}`);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const profileData = snap.data();
+                    console.log('fetchUserProfile: Profile loaded', profileData);
                     userProfile = profileData;
                     return profileData;
                 } else {
-                    console.log("fetchUserProfile: No profile document found for UID:", uid);
+                    console.log('fetchUserProfile: No profile document found for UID:', uid);
                     userProfile = null;
                     return null;
                 }
             } catch (error) {
-                console.error("Error fetching user profile:", error);
+                console.error('fetchUserProfile: Error fetching profile:', error);
                 userProfile = null;
                 return null;
             }
@@ -1730,7 +1822,33 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         console.log('User is logged in, fetching profile...');
         const profile = await fetchUserProfile(user.uid);
-        console.log('Profile fetched/created in onAuthStateChanged:', profile ? `${profile.name} ${profile.role}` : 'null');
+        console.log('Profile fetched in onAuthStateChanged:', profile ? `${profile.name} ${profile.role}` : 'null');
+
+        // If no profile exists yet, create a minimal one so the UI can proceed.
+        if (!profile) {
+            try {
+                const emailLocal = (user.email || '').split('@')[0] || 'User';
+                const minimalProfile = {
+                    uid: user.uid,
+                    email: user.email || null,
+                    name: emailLocal.charAt(0).toUpperCase() + emailLocal.slice(1),
+                    role: 'prefect',
+                    photoUrl: `https://placehold.co/100x100/A78BFA/ffffff?text=${(emailLocal[0]||'U').toUpperCase()}`,
+                    createdAt: new Date(),
+                    averageRating: 0,
+                    totalRatings: 0,
+                    isProfileComplete: false // flag to indicate user must finish setup
+                };
+                console.log('No profile found — creating minimal profile for user:', minimalProfile.name);
+                await setDoc(doc(db, 'userProfiles', user.uid), minimalProfile);
+                userProfile = minimalProfile;
+                console.log('Minimal profile created for UID:', user.uid);
+            } catch (err) {
+                console.error('Failed to create minimal profile for user:', err);
+            }
+        } else {
+            userProfile = profile;
+        }
     } else {
         console.log('User is not logged in, clearing profile...');
         userProfile = null;

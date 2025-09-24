@@ -20,11 +20,8 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Firebase SDKs (Modular versions loaded as regular scripts) -->
-    <!-- These load the global 'firebase' object and its components -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDKs are imported as ES modules inside the app scripts (modular SDK). -->
+    <!-- Do not include compat bundles to avoid duplicate initialization. -->
 </head>
 <body class="min-h-screen bg-gray-50 font-sans antialiased flex flex-col md:flex-row">
     <!-- Main App Container -->

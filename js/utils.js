@@ -2,11 +2,21 @@
 
 // Message box functions
 export const showMessageBox = (message, type = 'info') => {
+    // Defensive normalization: ensure we never display null/undefined or raw objects
+    let text;
+    if (message === null || typeof message === 'undefined') {
+        text = 'An unknown error occurred.';
+    } else if (typeof message === 'object') {
+        text = message.message || JSON.stringify(message);
+    } else {
+        text = String(message);
+    }
+
     const messageBox = document.getElementById('messageBox');
     const messageText = document.getElementById('messageText');
     
     if (messageBox && messageText) {
-        messageText.textContent = message;
+        messageText.textContent = text;
         messageBox.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-0 ${getMessageBoxClasses(type)}`;
         messageBox.style.display = 'block';
         
